@@ -35,6 +35,7 @@ export default function EventCreate() {
   const [longitude, setLongitude] = useState('');
   const [images, setImages] = useState<{ uri: string }[]>([]);
   const [existingImages, setExistingImages] = useState<string[]>([]);
+  const [originalImages, setOriginalImages] = useState<string[]>([]);
   const [locationModalOpen, setLocationModalOpen] = useState(false);
   const [newLocName, setNewLocName] = useState('');
   const [newLocAddress, setNewLocAddress] = useState('');
@@ -104,6 +105,7 @@ export default function EventCreate() {
         const urls = allImages
           .map((img: string) => resolveAssetUrl(img))
           .filter(Boolean) as string[];
+        setOriginalImages(allImages);
         setExistingImages(urls);
       } catch {}
     })();
@@ -288,6 +290,7 @@ export default function EventCreate() {
         latitude: latitude ? Number(latitude) : undefined,
         longitude: longitude ? Number(longitude) : undefined,
         images,
+        keep_images: originalImages,
       };
       if (editingId) {
         const updated = await updateEvent(editingId, payload);
@@ -333,11 +336,18 @@ export default function EventCreate() {
             <Text style={tw`text-gray-700 text-xs mb-1`}>Imagens atuais do evento</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={tw`gap-2`}>
               {existingImages.map((url, idx) => (
-                <Image
+                <Pressable
                   key={idx}
-                  source={{ uri: url }}
-                  style={{ width: 72, height: 72, borderRadius: 8 }}
-                />
+                  onPress={() => {
+                    setExistingImages((prev) => prev.filter((_, i) => i !== idx));
+                    setOriginalImages((prev) => prev.filter((_, i) => i !== idx));
+                  }}
+                >
+                  <Image
+                    source={{ uri: url }}
+                    style={{ width: 72, height: 72, borderRadius: 8 }}
+                  />
+                </Pressable>
               ))}
             </ScrollView>
           </View>

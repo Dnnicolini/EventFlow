@@ -106,6 +106,7 @@ export async function updateEvent(id: number, payload: Partial<EventDto> & {
   location_id?: number;
   latitude?: number;
   longitude?: number;
+  keep_images?: string[];
 }) {
   const form = new FormData();
   if (payload.name) form.append('name', payload.name);
@@ -119,6 +120,11 @@ export async function updateEvent(id: number, payload: Partial<EventDto> & {
   if (payload.location_id != null) form.append('location_id', String(payload.location_id));
   if (payload.latitude != null) form.append('latitude', String(payload.latitude));
   if (payload.longitude != null) form.append('longitude', String(payload.longitude));
+  if (payload.keep_images && Array.isArray(payload.keep_images)) {
+    payload.keep_images.forEach((img) => {
+      form.append('keep_images[]', img);
+    });
+  }
   (payload.images || []).forEach((img, idx) => {
     const name = img.name || `image_${idx}.jpg`;
     const type = img.type || 'image/jpeg';
