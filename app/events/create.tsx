@@ -11,6 +11,7 @@ import { createEvent, getEvent, updateEvent } from '@/services/events';
 import { listLocations, createLocation } from '@/services/locations';
 import * as ImagePicker from 'expo-image-picker';
 import DateTimeField from '@/components/ui/date-time-field';
+import { resolveAssetUrl } from '@/lib/api';
 import LocationPicker from '@/components/map/location-picker';
 import * as ExpoLocation from 'expo-location';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -33,12 +34,21 @@ export default function EventCreate() {
   const [latitude, setLatitude] = useState('');
   const [longitude, setLongitude] = useState('');
   const [images, setImages] = useState<{ uri: string }[]>([]);
+  const [existingImages, setExistingImages] = useState<string[]>([]);
   const [locationModalOpen, setLocationModalOpen] = useState(false);
   const [newLocName, setNewLocName] = useState('');
   const [newLocAddress, setNewLocAddress] = useState('');
   const [newLocLatitude, setNewLocLatitude] = useState('');
   const [newLocLongitude, setNewLocLongitude] = useState('');
   const [savingLocation, setSavingLocation] = useState(false);
+
+  const normalizeTime = (value?: string | null) => {
+    if (!value) return '';
+    if (/^\d{2}:\d{2}$/.test(value)) return value;
+    const match = /^(\d{2}:\d{2}):\d{2}$/.exec(value);
+    if (match) return match[1];
+    return value;
+  };
 
   useEffect(() => {
     (async () => {
@@ -72,8 +82,8 @@ export default function EventCreate() {
         setCategoryId(e.category?.id);
         setDate(e.start_date || '');
         setEndDate(e.end_date || '');
-        setStart(e.start_time || '');
-        setEnd(e.end_time || '');
+        setStart(normalizeTime(e.start_time));
+        setEnd(normalizeTime(e.end_time));
         if (typeof e.price === 'number') {
           const cents = Math.round(e.price * 100);
           handlePriceChange(String(cents));
@@ -83,6 +93,18 @@ export default function EventCreate() {
           if (e.location.latitude != null) setLatitude(String(e.location.latitude));
           if (e.location.longitude != null) setLongitude(String(e.location.longitude));
         }
+        const rawImages = Array.isArray(e.images) ? e.images : [];
+        const allImages = e.image && !rawImages.includes(e.image)
+          ? [e.image, ...rawImages]
+          : rawImages.length
+            ? rawImages
+            : e.image
+              ? [e.image]
+              : [];
+        const urls = allImages
+          .map((img: string) => resolveAssetUrl(img))
+          .filter(Boolean) as string[];
+        setExistingImages(urls);
       } catch {}
     })();
   }, [editingId]);
@@ -235,9 +257,11 @@ export default function EventCreate() {
       const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
       const startDateOnly = parseDateOnly(date);
 
-      if (startDateOnly.getTime() < todayOnly.getTime()) {
-        Alert.alert('Atenção', 'A data inicial não pode ser no passado.');
-        return;
+      if (!editingId) {
+        if (startDateOnly.getTime() < todayOnly.getTime()) {
+          Alert.alert('Atenção', 'A data inicial não pode ser no passado.');
+          return;
+        }
       }
 
       if (endDate) {
@@ -291,7 +315,7 @@ export default function EventCreate() {
         ]);
       }
     } catch (e: any) {
-      Alert.alert('Erro', e?.message || 'Falha ao criar evento');
+      Alert.alert('Erro', e?.message || 'Falha ao salvar evento');
     } finally {
       setLoading(false);
     }
@@ -299,12 +323,31 @@ export default function EventCreate() {
 
   return (
     <SafeAreaView style={tw`flex-1 bg-white`}>
-      <Header />
+      <Header title={editingId ? 'Editar Evento' : 'Cadastrar Evento'} />
       <ScrollView contentContainerStyle={tw`px-4 pb-10`} keyboardShouldPersistTaps="handled">
-        <Text style={tw`text-gray-900 text-lg font-semibold mb-3`}>Cadastrar Evento</Text>
+        <Text style={tw`text-gray-900 text-lg font-semibold mb-3`}>
+          {editingId ? 'Editar Evento' : 'Cadastrar Evento'}
+        </Text>
+        {editingId && existingImages.length > 0 && (
+          <View style={tw`mb-3`}>
+            <Text style={tw`text-gray-700 text-xs mb-1`}>Imagens atuais do evento</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={tw`gap-2`}>
+              {existingImages.map((url, idx) => (
+                <Image
+                  key={idx}
+                  source={{ uri: url }}
+                  style={{ width: 72, height: 72, borderRadius: 8 }}
+                />
+              ))}
+            </ScrollView>
+          </View>
+        )}
         <View style={tw`flex-row gap-3 mb-3`}>
           {images.slice(0, 3).map((img, idx) => (
-            <Pressable key={idx} onLongPress={() => setImages((prev) => prev.filter((_, i) => i !== idx))}>
+            <Pressable
+              key={idx}
+              onPress={() => setImages((prev) => prev.filter((_, i) => i !== idx))}
+            >
               <Image source={{ uri: img.uri }} style={{ width: 72, height: 72, borderRadius: 8 }} />
             </Pressable>
           ))}
