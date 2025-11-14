@@ -3,14 +3,12 @@ import { apiFetch, apiFetchRaw } from '@/lib/api';
 export type LoginPayload = { email: string; password: string };
 export type RegisterPayload = { name: string; email: string; password: string; password_confirmation?: string };
 
-// Adjust endpoints to match your Laravel API routes
 export async function login(payload: LoginPayload) {
   const { data, response } = await apiFetchRaw<{ token?: string; access_token?: string; data?: any; [k: string]: any }>('/login', {
     method: 'POST',
     body: JSON.stringify(payload),
   });
 
-  // Try to read token from body or headers
   const headerAuth = response.headers.get('authorization') || response.headers.get('Authorization') || '';
   const headerToken = headerAuth.toLowerCase().startsWith('bearer ') ? headerAuth.slice(7) : null;
 

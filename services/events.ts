@@ -28,10 +28,10 @@ export type EventDto = {
 
 export type EventListParams = {
   q?: string;
-  from_date?: string; // YYYY-MM-DD
-  to_date?: string;   // YYYY-MM-DD
-  time_from?: string; // HH:mm
-  time_to?: string;   // HH:mm
+  from_date?: string;
+  to_date?: string;
+  time_from?: string;
+  time_to?: string;
   category_id?: number;
   location?: number;
   per_page?: number;
