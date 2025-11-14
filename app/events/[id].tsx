@@ -11,6 +11,20 @@ import { resolveAssetUrl } from '@/lib/api';
 import { CalendarDays, Clock } from 'lucide-react-native';
 import EventMap from '@/components/map/event-map';
 
+function formatDateDisplay(value?: string | null) {
+  if (!value) return '-';
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (m) {
+    const [, y, mo, d] = m;
+    return `${d}/${mo}/${y}`;
+  }
+  const d = new Date(value);
+  if (!isNaN(d.getTime())) {
+    return d.toLocaleDateString();
+  }
+  return value;
+}
+
 export default function EventDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [data, setData] = useState<any>(null);
@@ -121,8 +135,8 @@ export default function EventDetail() {
               <Text style={tw`text-gray-700 text-sm ml-2`}>
                 {data?.start_date
                   ? data?.end_date && data.end_date !== data.start_date
-                    ? `${new Date(data.start_date).toLocaleDateString()} — ${new Date(data.end_date).toLocaleDateString()}`
-                    : new Date(data.start_date).toLocaleDateString()
+                    ? `${formatDateDisplay(data.start_date)} — ${formatDateDisplay(data.end_date)}`
+                    : formatDateDisplay(data.start_date)
                   : '-'}
               </Text>
             </View>

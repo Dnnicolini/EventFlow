@@ -15,6 +15,20 @@ export type EventItem = {
   images?: string[];
 };
 
+function formatDateDisplay(value?: string) {
+  if (!value) return 'DD/MM/AAAA';
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (m) {
+    const [, y, mo, d] = m;
+    return `${d}/${mo}/${y}`;
+  }
+  const d = new Date(value);
+  if (!isNaN(d.getTime())) {
+    return d.toLocaleDateString();
+  }
+  return value;
+}
+
 type Props = {
   item: EventItem;
   onPress?: (id: number) => void;
@@ -41,7 +55,7 @@ function Card({ item, onPress, ctaLabel = 'Mais Detalhes' }: Props) {
             {item.title}
           </Text>
           <Text style={tw`text-gray-500 text-xs`}>
-            {item.date ? new Date(item.date).toLocaleDateString() : 'DD/MM/AAAA'}
+            {formatDateDisplay(item.date)}
           </Text>
         </View>
         <Text style={tw`text-gray-600 text-xs mt-0.5`}>{item.category || 'Categoria'}</Text>
@@ -52,7 +66,7 @@ function Card({ item, onPress, ctaLabel = 'Mais Detalhes' }: Props) {
             <View style={tw`flex-row items-center`}>
               <CalendarDays size={16} color={tw.color('gray-700') || '#374151'} />
               <Text style={tw`text-gray-700 text-xs ml-2`}>
-                {item.date ? new Date(item.date).toLocaleDateString() : 'Data'}
+                {formatDateDisplay(item.date)}
               </Text>
             </View>
             <View style={tw`flex-row items-center`}>
